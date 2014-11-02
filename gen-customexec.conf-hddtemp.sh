@@ -1,3 +1,4 @@
+#!/bin/bash
 Gsm=($(lsblk | grep -v -e '├─' -e '└─' -e 'NAME' | awk '{print $1}'))
 
 Titems=${#Gsm[@]}
