@@ -21,7 +21,7 @@ Dtmp=${CSmrt[3]}
 
 if [ "$Dtmp" == "Enabled"  ] ; then
 if [ 'XX'"$(smartctl -A '/dev/'${Gsm[Count]} | grep ' Temperature_Celsius')" != 'XX'  ];then
-printf "/dev/"${Gsm[Count]}" "
+printf "/dev/${Gsm[Count]} "
 fi;fi;
 
 Count=$((Count+1))
