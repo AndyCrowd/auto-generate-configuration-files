@@ -1,0 +1,76 @@
+#!/bin/bash
+
+for Arch in x86_64 i386;do
+
+if [ ! -d "${Arch}" ];then mkdir "$Arch"  -p ;fi
+
+ wget -m -nd -nH https://dl.google.com/linux/direct/google-chrome-stable_current_"${Arch}".rpm -o /tmp/chromium-pepper-flash.wget-log -P "${Arch}"
+   if [ "$(grep '100%' -c /tmp/chromium-pepper-flash.wget-log)" != "0" ];then
+
+cd "${Arch}"
+
+if [ "$Arch" == "x86_64" ];then 
+MDa=$(md5sum  google-chrome-stable_current_"${Arch}".rpm | awk '{print $1}' )
+else
+MDb=$(md5sum  google-chrome-stable_current_"${Arch}".rpm | awk '{print $1}' )
+fi
+
+    7z e google-chrome-stable_current_"${Arch}".rpm -so | cpio -idvm
+
+cd ..
+
+CurrVer="$(awk -F'"' '{if(match($0,"version") != 0)print $4}' /usr/lib/PepperFlash/manifest.json)"
+NewVer="$(awk -F'"' '{if(match($0,"version") != 0)print $4}' ${Arch}/opt/google/chrome/PepperFlash/manifest.json)"
+
+
+echo Installed $CurrVer
+echo Downloaded $NewVer
+
+fi
+
+done
+
+if [ "$CurrVer" != "$NewVer"    ];then
+
+
+echo '# Maintainer: XXX <XXX(at)XXX>
+
+pkgname=chromium-pepper-flash
+pkgdesc="Google Chromes Pepper Flash plugin for Chromium (stable version)"
+' > PKGBUILD
+
+echo pkgver=$NewVer >> PKGBUILD
+
+echo '
+pkgrel=1
+epoch=1
+arch=("i686" "x86_64")
+url="http://www.google.com/chrome"
+license=("custom:chrome")
+conflicts=("chromium-pepper-flash-dev")
+install=chromium-pepper-flash.install
+# temporary to enforce upgrade to pacman 4.2
+makedepends=("pacman>=4.2")
+source=(license.html::https://www.google.com/chrome/intl/en/eula_text.html)
+source_i686+=("https://dl.google.com/linux/direct/google-chrome-stable_current_i386.rpm")
+source_x86_64+=("https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm")
+' >> PKGBUILD
+
+echo "sha256sums=(c714679be9b1de35475bfcd58b4d2fa5baf87c00eb049185ec062de276203d13)
+md5sums_i686=($MDb)
+md5sums_x86_64=($MDa)
+" >> PKGBUILD
+
+echo '
+package() {
+	# create required directories
+	install -d "${pkgdir}"/usr/lib/PepperFlash
+	# copy required files
+	install -m644 "${srcdir}"/opt/google/chrome/PepperFlash/* "${pkgdir}"/usr/lib/PepperFlash
+	# copy license
+	install -Dm644 "${srcdir}"/license.html "${pkgdir}"/usr/share/licenses/${pkgname}/license.html
+}
+
+' >> PKGBUILD
+
+fi
